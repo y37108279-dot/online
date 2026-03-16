@@ -197,8 +197,9 @@ ws=new WebSocket("wss://chat-server.y37108279.workers.dev/?room="+room)
 
 ws.onopen=()=>{
 
+// まず create を試す
 ws.send(JSON.stringify({
-type:"join",
+type:"create",
 name:username,
 pass:pass
 }))
@@ -210,6 +211,19 @@ ws.onmessage=(e)=>{
 const data=JSON.parse(e.data)
 
 if(data.type==="error"){
+
+// 部屋が既にあるなら join を試す
+if(data.message==="部屋は既に存在"){
+
+ws.send(JSON.stringify({
+type:"join",
+name:username,
+pass:pass
+}))
+
+return
+}
+
 alert(data.message)
 return
 }
@@ -224,21 +238,15 @@ return
 }
 
 if(data.type==="msg"){
-
 addMsg(data.name,data.message)
-
 }
 
 if(data.type==="system"){
-
 addSystem(data.message)
-
 }
 
 if(data.type==="users"){
-
 updateUsers(data.users)
-
 }
 
 }
