@@ -193,7 +193,7 @@ username=document.getElementById("name").value
 room=document.getElementById("room").value
 const pass=document.getElementById("pass").value
 
-ws=new WebSocket("wss://chat-server.y37108279.workers.dev/?room="+room)
+ws=new WebSocket("wss://server.y37108279.workers.dev/?room="+room)
 
 ws.onopen=()=>{
 
