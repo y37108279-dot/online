@@ -206,9 +206,18 @@ pass:pass
 
 }
 
-ws.onmessage=(e)=>{
+ws.onmessage = async (e) => {
 
-const data=JSON.parse(e.data)
+let text
+
+// Blobだった場合は文字列に変換
+if (e.data instanceof Blob) {
+    text = await e.data.text()
+} else {
+    text = e.data
+}
+
+const data = JSON.parse(text)
 
 if(data.type==="error"){
 
@@ -250,9 +259,6 @@ updateUsers(data.users)
 }
 
 }
-
-}
-
 function addMsg(name,msg){
 
 const chat=document.getElementById("chat")
