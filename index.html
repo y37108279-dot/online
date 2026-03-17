@@ -29,6 +29,13 @@ margin-bottom:10px;
 font-weight:bold;
 }
 
+#status{
+padding:5px 10px;
+font-size:12px;
+background:#1e1f22;
+color:#aaa;
+}
+
 #sendArea{
 display:flex;
 padding:10px;
@@ -104,6 +111,8 @@ margin-top:10px;
 </div>
 </div>
 
+<div id="status">未接続</div>
+
 <div id="chat"></div>
 
 <div id="sendArea">
@@ -115,17 +124,21 @@ margin-top:10px;
 
 let ws
 let username
+let reconnectTimer
 
-function join(){
+function setStatus(text){
+document.getElementById("status").innerText = text
+}
 
-username=document.getElementById("name").value
-if(!username) return
+function connect(){
+
+setStatus("接続中...")
 
 ws = new WebSocket('wss://websocket-server-production-aa69.up.railway.app')
 
 ws.onopen = () => {
+setStatus("接続済み")
 console.log("接続成功")
-document.getElementById("login").style.display="none"
 }
 
 ws.onmessage = async (e) => {
@@ -142,7 +155,6 @@ let data
 try{
 data = JSON.parse(text)
 }catch{
-console.log("そのまま表示:", text)
 addMsg("server", text)
 return
 }
@@ -152,16 +164,28 @@ addMsg(data.name, data.message)
 }
 }
 
-ws.onerror = (e)=>{
-console.log("エラー", e)
-alert("接続エラー")
+ws.onerror = () => {
+setStatus("エラー")
 }
 
-ws.onclose = ()=>{
-console.log("切断")
-alert("サーバーから切断されました")
+ws.onclose = () => {
+setStatus("切断 → 再接続中...")
+console.log("切断されたので再接続")
+
+clearTimeout(reconnectTimer)
+reconnectTimer = setTimeout(connect, 2000)
 }
 
+}
+
+function join(){
+
+username = document.getElementById("name").value
+if(!username) return
+
+document.getElementById("login").style.display="none"
+
+connect()
 }
 
 function addMsg(name,msg){
