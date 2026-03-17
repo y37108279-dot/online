@@ -197,7 +197,6 @@ ws=new WebSocket('wss://websocket-server-production-aa69.up.railway.app');
 
 ws.onopen=()=>{
 
-// まず create を試す
 ws.send(JSON.stringify({
 type:"create",
 name:username,
@@ -210,18 +209,23 @@ ws.onmessage = async (e) => {
 
 let text
 
-// Blobだった場合は文字列に変換
+// ★ここを修正（Blob対応）
 if (e.data instanceof Blob) {
-    text = await e.data.text()
+text = await e.data.text()
 } else {
-    text = e.data
+text = e.data
 }
 
-const data = JSON.parse(text)
+let data
+try {
+data = JSON.parse(text)
+} catch {
+console.log("JSONじゃないデータ:", text)
+return
+}
 
 if(data.type==="error"){
 
-// 部屋が既にあるなら join を試す
 if(data.message==="部屋は既に存在"){
 
 ws.send(JSON.stringify({
@@ -259,6 +263,9 @@ updateUsers(data.users)
 }
 
 }
+
+}
+
 function addMsg(name,msg){
 
 const chat=document.getElementById("chat")
