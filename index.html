@@ -116,7 +116,7 @@ margin-top:10px;
 <div id="chat"></div>
 
 <div id="sendArea">
-<input id="msg" placeholder="メッセージ">
+<input id="msg" maxlength="400" placeholder="メッセージ（最大400文字）">
 <button onclick="send()">送信</button>
 </div>
 
@@ -210,11 +210,19 @@ return
 }
 
 const input=document.getElementById("msg")
-if(!input.value) return
+let text=input.value
+
+if(!text) return
+
+// ★400文字制限（安全チェック）
+if(text.length > 400){
+alert("400文字以内で入力してください")
+return
+}
 
 const message = {
 name: username,
-message: input.value
+message: text
 }
 
 ws.send(JSON.stringify(message))
