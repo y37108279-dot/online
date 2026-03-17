@@ -2,53 +2,17 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>LAN Chat</title>
+<title>Simple Chat</title>
 
 <style>
-
 body{
 margin:0;
 font-family:system-ui;
 background:#2b2d31;
 color:white;
+display:flex;
+flex-direction:column;
 height:100vh;
-display:flex;
-}
-
-/* layout */
-
-#sidebar{
-width:220px;
-background:#1e1f22;
-padding:10px;
-box-sizing:border-box;
-display:flex;
-flex-direction:column;
-}
-
-#users{
-flex:1;
-overflow-y:auto;
-margin-top:10px;
-}
-
-.user{
-padding:6px;
-border-radius:6px;
-margin-bottom:4px;
-background:#2b2d31;
-}
-
-#main{
-flex:1;
-display:flex;
-flex-direction:column;
-}
-
-#top{
-background:#1e1f22;
-padding:10px;
-font-weight:bold;
 }
 
 #chat{
@@ -63,15 +27,6 @@ margin-bottom:10px;
 
 .name{
 font-weight:bold;
-}
-
-.system{
-color:#aaa;
-font-style:italic;
-}
-
-.me .name{
-color:#7CFC7C;
 }
 
 #sendArea{
@@ -103,8 +58,6 @@ button:hover{
 background:#4752c4;
 }
 
-/* login */
-
 #login{
 position:absolute;
 top:0;
@@ -121,7 +74,7 @@ background:#2b2d31;
 background:#1e1f22;
 padding:25px;
 border-radius:10px;
-width:320px;
+width:300px;
 }
 
 .panel input{
@@ -138,39 +91,18 @@ color:white;
 width:100%;
 margin-top:10px;
 }
-
 </style>
 </head>
 
 <body>
 
 <div id="login">
-
 <div class="panel">
-
-<h2>チャット参加</h2>
-
+<h2>名前入力</h2>
 <input id="name" placeholder="ユーザー名">
-<input id="room" placeholder="部屋ID">
-<input id="pass" type="password" placeholder="パスワード">
-
 <button onclick="join()">参加</button>
-
 </div>
-
 </div>
-
-<div id="sidebar">
-
-<h3>Users</h3>
-
-<div id="users"></div>
-
-</div>
-
-<div id="main">
-
-<div id="top">Room</div>
 
 <div id="chat"></div>
 
@@ -179,89 +111,55 @@ margin-top:10px;
 <button onclick="send()">送信</button>
 </div>
 
-</div>
-
 <script>
 
 let ws
 let username
-let room
 
 function join(){
 
 username=document.getElementById("name").value
-room=document.getElementById("room").value
-const pass=document.getElementById("pass").value
+if(!username) return
 
-ws=new WebSocket('wss://websocket-server-production-aa69.up.railway.app');
+ws = new WebSocket('wss://websocket-server-production-aa69.up.railway.app')
 
-ws.onopen=()=>{
-
-ws.send(JSON.stringify({
-type:"create",
-name:username,
-pass:pass
-}))
-
+ws.onopen = () => {
+console.log("接続成功")
+document.getElementById("login").style.display="none"
 }
 
 ws.onmessage = async (e) => {
 
 let text
 
-// ★ここを修正（Blob対応）
-if (e.data instanceof Blob) {
+if(e.data instanceof Blob){
 text = await e.data.text()
-} else {
+}else{
 text = e.data
 }
 
 let data
-try {
+try{
 data = JSON.parse(text)
-} catch {
-console.log("JSONじゃないデータ:", text)
+}catch{
+console.log("そのまま表示:", text)
+addMsg("server", text)
 return
 }
 
-if(data.type==="error"){
-
-if(data.message==="部屋は既に存在"){
-
-ws.send(JSON.stringify({
-type:"join",
-name:username,
-pass:pass
-}))
-
-return
+if(data.name && data.message){
+addMsg(data.name, data.message)
+}
 }
 
-alert(data.message)
-return
+ws.onerror = (e)=>{
+console.log("エラー", e)
+alert("接続エラー")
 }
 
-if(data.type==="join_ok"){
-
-document.getElementById("login").style.display="none"
-
-document.getElementById("top").innerText="Room: "+room
-
-return
-}
-
-if(data.type==="msg"){
-addMsg(data.name,data.message)
-}
-
-if(data.type==="system"){
-addSystem(data.message)
-}
-
-if(data.type==="users"){
-updateUsers(data.users)
-}
-
+ws.onclose = ()=>{
+console.log("切断")
+alert("サーバーから切断されました")
 }
 
 }
@@ -271,72 +169,38 @@ function addMsg(name,msg){
 const chat=document.getElementById("chat")
 
 const div=document.createElement("div")
-
-div.className="msg "+(name===username?"me":"")
+div.className="msg"
 
 div.innerHTML="<span class='name'>"+name+"</span>: "+msg
 
 chat.appendChild(div)
-
 chat.scrollTop=chat.scrollHeight
-
-}
-
-function addSystem(msg){
-
-const chat=document.getElementById("chat")
-
-const div=document.createElement("div")
-
-div.className="msg system"
-
-div.innerText=msg
-
-chat.appendChild(div)
-
-chat.scrollTop=chat.scrollHeight
-
-}
-
-function updateUsers(list){
-
-const users=document.getElementById("users")
-
-users.innerHTML=""
-
-for(const u of list){
-
-const div=document.createElement("div")
-
-div.className="user"
-
-div.innerText=u
-
-users.appendChild(div)
-
-}
 
 }
 
 function send(){
 
-const input=document.getElementById("msg")
+if(!ws || ws.readyState !== WebSocket.OPEN){
+alert("まだ接続されていません")
+return
+}
 
+const input=document.getElementById("msg")
 if(!input.value) return
 
-ws.send(JSON.stringify({
-type:"msg",
-message:input.value
-}))
+const message = {
+name: username,
+message: input.value
+}
+
+ws.send(JSON.stringify(message))
 
 input.value=""
 
 }
 
 document.getElementById("msg").addEventListener("keydown",e=>{
-
 if(e.key==="Enter") send()
-
 })
 
 </script>
