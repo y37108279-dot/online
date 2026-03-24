@@ -106,7 +106,7 @@ margin-top:10px;
 <div id="login">
 <div class="panel">
 <h2>名前入力</h2>
-<input id="name" placeholder="ユーザー名">
+<input id="name" maxlength="15" placeholder="ユーザー名（15文字以内）">
 <button onclick="join()">参加</button>
 </div>
 </div>
@@ -170,7 +170,6 @@ setStatus("エラー")
 
 ws.onclose = () => {
 setStatus("切断 → 再接続中...")
-console.log("切断されたので再接続")
 
 clearTimeout(reconnectTimer)
 reconnectTimer = setTimeout(connect, 2000)
@@ -180,8 +179,20 @@ reconnectTimer = setTimeout(connect, 2000)
 
 function join(){
 
-username = document.getElementById("name").value
-if(!username) return
+const inputName = document.getElementById("name").value.trim()
+
+// ★名前チェック
+if(!inputName){
+alert("名前を入力してください")
+return
+}
+
+if(inputName.length > 15){
+alert("名前は15文字以内にしてください")
+return
+}
+
+username = inputName
 
 document.getElementById("login").style.display="none"
 
@@ -214,7 +225,7 @@ let text=input.value
 
 if(!text) return
 
-// ★400文字制限（安全チェック）
+// ★400文字制限
 if(text.length > 400){
 alert("400文字以内で入力してください")
 return
